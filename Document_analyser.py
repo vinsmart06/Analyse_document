@@ -31,7 +31,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Enterprise Document Intelligent Analyzer ")
+st.title("📊 Enterprise Intelligent Document Analyzer ")
 st.caption("Powered by AI LLM + LangChain: Developed by Vineet")
 
 # ----------------------------
