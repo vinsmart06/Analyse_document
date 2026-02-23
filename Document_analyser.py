@@ -18,7 +18,7 @@ from langchain_classic.chains.retrieval import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
 
-
+#load_dotenv()
 
 os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
@@ -31,8 +31,8 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Enterprise Document Analytics")
-st.caption("Powered by AI LLM + LangChain: Developed By Vineet")
+st.title("📊 Enterprise Document Analytics Chatbot")
+st.caption("Powered by AI LLM + LangChain: Developed by Vineet")
 
 # ----------------------------
 # SESSION STATE
@@ -113,8 +113,6 @@ if st.session_state.vectorstore:
         streaming=True  # 🔥 ENABLE STREAMING
     )
 
-    retriever = st.session_state.vectorstore.as_retriever()
-
     # Reformulation prompt (history-aware retriever)
     contextualize_prompt = ChatPromptTemplate.from_messages([
         ("system",
@@ -124,33 +122,22 @@ if st.session_state.vectorstore:
         ("human", "{input}")
     ])
 
-    history_aware_retriever = create_history_aware_retriever(
-        llm,
-        retriever,
-        contextualize_prompt
-    )
-
-    # QA prompt
-    qa_prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         "Answer using ONLY the provided context. "
-         "If answer not found, say 'I don't know.'"),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-        ("system", "Context:\n{context}")
-    ])
-
-    document_chain = create_stuff_documents_chain(llm, qa_prompt)
-
-    rag_chain = create_retrieval_chain(
-        history_aware_retriever,
-        document_chain
-    )
 
     # Display chat history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+
+
+
+#    document_chain = create_stuff_documents_chain(llm, qa_prompt)
+
+#    rag_chain = create_retrieval_chain(
+#        history_aware_retriever,
+#        document_chain
+#    )
+
+
 
     user_input = st.chat_input("Ask something about your documents...")
 
@@ -160,19 +147,36 @@ if st.session_state.vectorstore:
 
         with st.chat_message("user"):
             st.markdown(user_input)
+        relevant_docs = st.session_state.vectorstore.similarity_search(user_input,K=5)
+ #       relevant_docs = retriever.retrieve(user_input)
+        context = "\n\n".join([doc.page_content for doc in relevant_docs])
 
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
+    # QA prompt
+        qa_prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "Answer using ONLY the provided context. "
+         "If answer not found, say 'I don't know.'"),
+        MessagesPlaceholder("chat_history"),
+        ("human", "{input}"),
+        ("system", "Context:\n{context}")
+        ])
 
-            with st.spinner("Thinking..."):
-                for chunk in rag_chain.stream({
-                    "input": user_input,
-                    "chat_history": st.session_state.chat_history
-                }):
-                    if "answer" in chunk:
-                        full_response += chunk["answer"]
-                        message_placeholder.markdown(full_response)
+        formatted_input = qa_prompt.format_prompt(
+            input=user_input,
+            context=context,
+            chat_history=st.session_state.chat_history
+        ).to_messages()
+
+                # ----------------------------
+        # Stream LLM response
+        # ----------------------------
+        full_response = ""
+        message_placeholder = st.empty()
+
+        with st.spinner("Thinking..."):
+           for token in llm.stream(formatted_input):
+                full_response += token.text
+                message_placeholder.markdown(full_response)
 
         st.session_state.messages.append(
             {"role": "assistant", "content": full_response}
