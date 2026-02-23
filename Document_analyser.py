@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 st.title("📊 Enterprise Document Analytics")
-st.caption("Powered by AI LLM + LangChain: Developed By Vineet Garg")
+st.caption("Powered by AI LLM + LangChain: Developed By Vineet")
 
 # ----------------------------
 # SESSION STATE
