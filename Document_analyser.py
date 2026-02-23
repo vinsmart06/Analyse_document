@@ -31,8 +31,8 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Enterprise Document Analytics Chatbot")
-st.caption("Powered by Gemini + LangChain")
+st.title("📊 Enterprise Document Analytics")
+st.caption("Powered by AI LLM + LangChain")
 
 # ----------------------------
 # SESSION STATE
